@@ -22,9 +22,19 @@ class ProductController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'slug' => 'required',
             'price' => 'required',
+            'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        if ($request->has('image')) {
+            $image_path = $request->file('image')->store('images', 'public');
+            return Product::create([
+                'name' => $request->name,
+                'description' => $request->description,
+                'price' => $request->price,
+                'image' => $image_path,
+            ]);
+        }
         return Product::create($request->all());
     }
 
@@ -39,12 +49,25 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
+
     public function update(Request $request, string $id)
     {
         $product = Product::find($id);
-        $product->update($request->all());
+        $product->update($request->except('image'));
+
+        if ($request->hasFile('image')) {
+            $request->validate([
+                'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
+
+            $image_path = $request->file('image')->store('images', 'public');
+            $product->image = $image_path;
+            $product->save();
+        }
+
         return $product;
     }
+
 
     /**
      * Remove the specified resource from storage.
